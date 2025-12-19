@@ -4,6 +4,7 @@ from menu import Kategori, MenuItem, Makanan, Minuman, Discout
 class Menu:
     def __init__(self) -> None:
         self.__menu: list[MenuItem] = []
+        self.default_menu()
         pass
 
     def add_menu(self, menu: MenuItem):
@@ -48,7 +49,7 @@ class Menu:
             if menu.get_name() == name:
                 return menu
         return None
-    def get_menu_detail(self, index):
+    def get_by_index(self, index):
        return self.__menu[index]
     
     def delete_menu(self, index):
@@ -58,29 +59,29 @@ class Menu:
 #  class untuk menyimpan pesanan
 class Pesanan:
     def __init__(self) -> None:
-        self.__keranjang__: list[tuple[MenuItem, int]] = []
+        self.__keranjang: list[tuple[MenuItem, int]] = []
         pass
 
     def add_to_keranjang(self, menu: MenuItem, quantity: int) -> int:
-        self.__keranjang__.append((menu, quantity))
-        return len(self.__keranjang__) - 1
+        self.__keranjang.append((menu, quantity))
+        return len(self.__keranjang) - 1
 
     def get_keranjang(self):
-        return self.__keranjang__
+        return self.__keranjang
     
     def clear_keranjang(self):
-        self.__keranjang__ = []
+        self.__keranjang = []
 
     def remove_item_by_MenuItem(self, menu: MenuItem):
         item = self.get_menu_by_MenuItem(menu)
         if item is not None:
-            self.__keranjang__.remove(item)
+            self.__keranjang.remove(item)
     
     def update_item_keranjang(self, menu, quantity: int):
         item = self.get_menu_by_MenuItem(menu)
         if item is not None:
-            idx = self.__keranjang__.index(item)
-            self.__keranjang__[idx] = (item[0], quantity)
+            idx = self.__keranjang.index(item)
+            self.__keranjang[idx] = (item[0], quantity)
 
     def get_menu_by_MenuItem(self, menu: MenuItem):
         for item in self.get_keranjang():
@@ -89,4 +90,7 @@ class Pesanan:
         return None
     
     def keranjang_size(self):
-        return len(self.__keranjang__)
+        return len(self.__keranjang)
+    
+    def get_by_index(self, index: int) -> tuple[MenuItem, int]:
+        return self.__keranjang[index]

@@ -21,7 +21,7 @@ class ListOfChoice:
 
     def show(self):
         if len(self.choices) == 0:
-            raise Exception("Theres no choice to make.")
+            return None
         
         while True:
             clearScreen()

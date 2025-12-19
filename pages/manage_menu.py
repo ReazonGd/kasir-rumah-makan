@@ -94,7 +94,7 @@ class ManageMenus:
             if selected_item is None:
                 return
 
-            menu = self.menu.get_menu_detail(selected_item)
+            menu = self.menu.get_by_index(selected_item)
             menu.tampilMenu()
             if menu.is_deleted():
                 self.pesanan.remove_item_by_MenuItem(menu)

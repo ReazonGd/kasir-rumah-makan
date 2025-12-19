@@ -10,9 +10,12 @@ class OrderCalculator:
         self.menu = menu
         self.pesanan = pesanan
     
-    def calculate_total(self, discount: Discout|None = None):
+    def calculate_total(self):
         keranjang_items = self.pesanan.get_keranjang()
         subtotal = sum(item.get_price() * qty for (item, qty) in keranjang_items)
+
+        discount = self.select_discount(subtotal)
+
         total_discount = 0.0
         if discount is not None and discount.is_accepteble(subtotal):
             disc_value = discount.calculate(subtotal)
@@ -96,8 +99,9 @@ class OrderCalculator:
         print()
         
         if calculation['total_discount'] > 0:
-            for value, desc in calculation['discounts']:
-                print(f"{desc}\n  -Rp {value}")
+            desc = calculation['discount'] if calculation['discount'] is not None else "Diskon"
+            value = calculation['total_discount']
+            print(f"{desc}\n  -Rp {value}")
             print(f"Total Diskon   : -Rp {calculation['total_discount']}")
         
         print()
@@ -108,14 +112,7 @@ class OrderCalculator:
         print("------------------------------------")
         print(f"Total Bayar    : Rp {calculation['final_total']}")
         print("====================================")
-        # input("\nTekan Enter untuk menyelesaikan pembayaran...")
-        acc = ListOfChoice(
-            "[Selesaikan Pesanan] Yakin ingin menyelesaikan pesanan?",
-            ["Selesai", "Tidak"],
-            use_number=False,
-            exiteable=False
-        ).show()
-        if acc == 0:
-            self.pesanan.clear_keranjang()
+        input("\nTekan Enter untuk menyelesaikan pembayaran...")
 
         enterAlternateScreen()
+        self.pesanan.clear_keranjang()
