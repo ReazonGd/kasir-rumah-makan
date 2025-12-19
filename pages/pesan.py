@@ -1,25 +1,19 @@
-from util.user_input import MenuList, input_int
-from util.storage import Storage
+from util.user_input import ListOfChoice, input_int
+from util.storage import Pesanan, Menu
 from menu import Kategori
 from .order_calculator import OrderCalculator
-from discount.discounts import BuyOneGetOneFreeDiscount, PercentageDiscount
 
 class Kasir:
-    def __init__(self, storage: Storage) -> None:
-        self.storage: Storage = storage
+    def __init__(self, menu: Menu, pesanan: Pesanan) -> None:
         self.display_category = Kategori.Makanan
-        self.calculator = OrderCalculator(self.storage, 10, 20000)
-        self._setup_discount()
+        self.pesanan = pesanan
+        self.menu = menu
+        self.calculator = OrderCalculator(self.pesanan,self.menu, 0.10, 20000.0)
         pass
 
-    def _setup_discount(self):
-        self.calculator.add_discount(PercentageDiscount(min_subtotal=100000, percentage=10, storage=self.storage))
-        buy1get1_item = self.storage.get_menu_by_name("Jus Alpukat")
-        self.calculator.add_discount(BuyOneGetOneFreeDiscount(min_subtotal=50000, menu=buy1get1_item, storage=self.storage))
-    
     def kasir_option(self):
         while True:
-            answ = MenuList("[Pemesanan]===================",
+            answ = ListOfChoice("[Pemesanan]===================",
                 ["Lihat Menu Makanan", "Lihat Menu Minuman", "keranjang", "Selesaikan Pesanan"],
                 exiteable=True,
                 use_number=True
@@ -36,23 +30,16 @@ class Kasir:
             elif answ == 2:
                 self.keranjang_option()
             elif answ == 3:
-                acc = MenuList(
-                    "[Selesaikan Pesanan] Yakin ingin menyelesaikan pesanan?",
-                    ["Selesai", "Tidak"],
-                    use_number=False,
-                    exiteable=False
-                ).show()
-                if acc == 0:
-                    self.calculator.display_struk()
+                self.calculator.display_struk()
             
-    def keranjang_option(self):
-        keranjang_items = self.storage.get_keranjang()
+    def keranjang_option(self): 
+        keranjang_items = self.pesanan.get_keranjang()
         if len(keranjang_items) == 0:
             input("Keranjang kosong! tekan enter untuk kembali...")
             return
 
-        list_item = [f"{item[0].price} x {item[1]} = {item[0].price * item[1]} \t{item[0].name}" for item in keranjang_items]
-        menu_list = MenuList(
+        list_item = [f"{item[0].get_price()} x {item[1]} = {item[0].get_price() * item[1]} \t{item[0].get_name()}" for item in keranjang_items]
+        menu_list = ListOfChoice(
             "[Keranjang] pilih item untuk di edit\n"
             "\tharga \t\tnama",
             list_item,
@@ -69,11 +56,11 @@ class Kasir:
             self.open_item(selected_item)
 
     def menus_display(self):
-        list_item_and_idx = [(f"{m.price} \t{m.name}",i ) for i, m in enumerate(self.storage.get_menu_list()) if m.jenis == self.display_category]
+        list_item_and_idx = [(f"{m.get_price()} \t{m.get_name()}",i ) for i, m in enumerate(self.menu.get_menu_list()) if m.get_jenis() == self.display_category]
         list_item = [item[0] for item in list_item_and_idx]
-        menu_list = MenuList(
+        menu_list = ListOfChoice(
             f"[Kasir] pilih menu {self.display_category.value}"
-            "\n\tharga \tnama",
+            "\nharga \tnama",
             list_item,
             use_number=True,
             exiteable=True
@@ -84,20 +71,20 @@ class Kasir:
             if selected_item is None:   
                 return
 
-            menu = self.storage.get_menu_detail(list_item_and_idx[selected_item][1])
-            found = self.storage.get_keranjang_from_menu(menu)
+            menu = self.menu.get_menu_detail(list_item_and_idx[selected_item][1])
+            found = self.pesanan.get_menu_by_MenuItem(menu)
 
             if found is not None:
                 self.open_item(found)
             else:
                 jumlah = input_int("Masukkan jumlah\n")
-                self.storage.add_to_keranjang(menu, jumlah)
-                menu_list.msg = f"({menu.name} + {jumlah}) \n-> "
+                self.pesanan.add_to_keranjang(menu, jumlah)
+                menu_list.msg = f"({menu.get_name()} + {jumlah}) \n-> "
 
 
     def open_item(self, item_on_keranjang):
         while True:
-            methode = MenuList(
+            methode = ListOfChoice(
                 f"[Kasir{item_on_keranjang[0].name}] ===========\n"
                 f"Harga:    {item_on_keranjang[0].price}\n"
                 f"Kategori: {item_on_keranjang[0].jenis.value}\n\n"
@@ -109,10 +96,10 @@ class Kasir:
 
             if methode == 0:
                 quantity = input_int("Masukkan jumlah\n")
-                self.storage.update_item_keranjang(item_on_keranjang[0], quantity)
+                self.pesanan.update_item_keranjang(item_on_keranjang[0], quantity)
                 item_on_keranjang[1] = quantity # update local reference
             elif methode == 1:
-                confirm = MenuList(
+                confirm = ListOfChoice(
                         f"[Hapus Menu] ===========\n"
                         f"Yakin ingin menghapus {item_on_keranjang[0].name} dari keranjang?",
                         ["Ya", "Tidak"],
@@ -120,7 +107,7 @@ class Kasir:
                         exiteable=False
                     ).show()
                 if confirm == 0:
-                    self.storage.delete_item_keranjang(item_on_keranjang[0])
+                    self.pesanan.remove_item_by_MenuItem(item_on_keranjang[0])
                     return
             elif methode is None:
                 return

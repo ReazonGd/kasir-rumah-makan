@@ -1,116 +1,101 @@
-from util.cli import enterAlternateScreen, exitAlternateScreen, clearScreen
-from util.user_input import input_int, MenuList
-from util.storage import Storage
-from menu import Menu, Kategori
-from copy import copy
+from util.cli import clearScreen
+from util.user_input import input_int, input_float, ListOfChoice
+from util.storage import Menu, Pesanan
+from menu import Makanan, Minuman, Discout
+
 
 class ManageMenus:
-    def __init__(self, storage: Storage) -> None:
-        self.storage = storage
+    def __init__(self, menu: Menu, pesanan: Pesanan) -> None:
+        self.menu = menu
+        self.pesanan = pesanan
 
     def manage_options(self):
         while True:
-            ans = MenuList("[Kelola Menu] ", ["tambah", "edit/hapus"], use_number=True, exiteable=True).show()
+            ans = ListOfChoice(
+                "[Kelola Menu] ",
+                ["tambah makanan/minuman", "tambah diskon", "edit/hapus"],
+                use_number=True,
+                exiteable=True,
+            ).show()
 
             if ans == 0:
                 self.add_menu()
             elif ans == 1:
+                self.add_discount()
+            elif ans == 2:
                 self.edit_page()
             elif ans is None:
                 return
+
+    def add_discount(self):
+        while True:
+            clearScreen()
+            menu_name = input("Masukkan nama diskon:\n").strip()
+            if self.menu.is_menu_exists(menu_name):
+                print("Diskon dengan nama tersebut sudah ada!")
+                input("Tekan enter untuk melanjutkan...")
+                continue
+
+            discount_percentage = input_int("Masukkan persentase diskon:\n")
+            min_subtotal = input_float("Masukkan minimum pembayaran untuk diskon ini:\n")
+
+            new_discount = Discout(
+                menu_name, discount_percentage, min_subtotal
+            )
+
+            self.menu.add_menu(new_discount)
+            return
 
     def add_menu(self):
         while True:
             clearScreen()
             menu_name = input("Masukkan nama:\n").strip()
-            if self.storage.is_menu_exists(menu_name):
+            if self.menu.is_menu_exists(menu_name):
                 print("Menu dengan nama tersebut sudah ada!")
                 input("Tekan enter untuk melanjutkan...")
                 continue
-        
-            menu_price = input_int("Masukkan harga:\n")
 
-            jenis_idx = MenuList(
+            menu_price = input_float("Masukkan harga:\n")
+
+            jenis_idx = ListOfChoice(
                 "Termasuk jenis?",
-                ["makanan", "minuman"],
+                ["makanan", "minuman",],
                 use_number=True,
-                exiteable=False
+                exiteable=False,
             ).show()
 
-            new_menu = Menu(
-                menu_name,
-                menu_price,
-                [Kategori.Makanan, Kategori.Minuman][jenis_idx]
-            )
+            if jenis_idx == 0:
+                new_menu = Makanan(menu_name, menu_price)
+            else:
+                new_menu = Minuman(menu_name, menu_price)   
+            # Menu(
+            #     menu_name, menu_price, [Kategori.Makanan, Kategori.Minuman][jenis_idx]
+            # )
 
-            self.storage.add_menu(new_menu)
+            self.menu.add_menu(new_menu)
             return
 
     def edit_page(self):
-        list_item = [m.name for m in self.storage.__menu__]
-        menu_list = MenuList(
+        def get_list_item():
+            return [m.get_name() for m in self.menu.get_menu_list()]
+        
+        list_item = get_list_item() 
+        menu_list = ListOfChoice(
             "[Edit Menu] pilih menu untuk di edit",
             list_item,
             use_number=True,
-            exiteable=True
+            exiteable=True,
         )
 
         while True:
+            menu_list.update_choices(get_list_item())
             selected_item = menu_list.show()
 
             if selected_item is None:
                 return
 
-            menu = copy(self.storage.get_menu_detail(selected_item))
-
-            while True:
-                methode = MenuList(
-                    f"[Edit Menu {menu.name}] ===========\n"
-                    f"Harga: \t\t{menu.price}\n"
-                    f"Kategori: \t{menu.jenis.name}",
-                    ["Ganti Nama", "Ganti Harga", "Ganti Kategori", "Hapus Menu"],
-                    use_number=True,
-                    exiteable=True
-                ).show()
-
-                if methode is None:
-                    confirm = MenuList(
-                        f"[Konfirmasi {menu.name}] ===========\n"
-                        f"Harga: \t{menu.price}\nKategori: \t{menu.jenis.name}\n\n"
-                        "Keluar dan Simpan?",
-                        ["Ya", "Tidak", "Batal"],
-                        use_number=False,
-                        exiteable=False
-                    ).show()
-
-                    if confirm == 0:
-                        self.storage.update_menu(selected_item, menu)
-                        return
-                    elif confirm == 1:
-                        break
-
-                elif methode == 0:
-                    menu.name = input("Masukkan nama baru:\n")
-                elif methode == 1:
-                    menu.price = input_int("Masukkan harga baru:\n")
-                elif methode == 2:
-                    jenis_idx = MenuList(
-                        "Termasuk jenis?",
-                        ["makanan", "minuman"],
-                        use_number=True,
-                        exiteable=False
-                    ).show()
-                    menu.jenis = [Kategori.Makanan, Kategori.Minuman][jenis_idx]
-                elif methode == 3:
-                    confirm = MenuList(
-                        f"[Hapus Menu {menu.name}] ===========\n"
-                        "Yakin ingin menghapus menu ini?",
-                        ["Ya", "Tidak"],
-                        use_number=False,
-                        exiteable=False
-                    ).show()
-                    if confirm == 0:
-                        self.storage.delete_menu(selected_item)
-                        break
-
-                
+            menu = self.menu.get_menu_detail(selected_item)
+            menu.tampilMenu()
+            if menu.is_deleted():
+                self.pesanan.remove_item_by_MenuItem(menu)
+                self.menu.delete_menu(selected_item)

@@ -1,8 +1,8 @@
 # Nama: Khafid Rosidi
 # NIM: 202453071
 
-from util.user_input import MenuList
-from util.storage import Storage
+from util.user_input import ListOfChoice
+from util.storage import Menu, Pesanan
 from util.cli import enterAlternateScreen, exitAlternateScreen, clearScreen
 
 from pages.manage_menu import ManageMenus
@@ -14,11 +14,15 @@ class Main:
             enterAlternateScreen()
             clearScreen()
 
-            self.storage = Storage()
-            self.kasir = Kasir(self.storage)
-            self.menus_manager = ManageMenus(self.storage)
+            self.menu = Menu()
+            self.pesanan = Pesanan()
+            self.kasir = Kasir(self.menu, self.pesanan)
+            self.menus_manager = ManageMenus(self.menu, self.pesanan)
             
             self.main_display()
+        except KeyboardInterrupt:
+            print("Program exit by user")
+
         finally:
             exitAlternateScreen()
             print("Bye")
@@ -26,7 +30,7 @@ class Main:
 
     def main_display(self):
         while True:
-            ans = MenuList(
+            ans = ListOfChoice(
                 "[Main Menu] Restoran Ku V.1.0",
                 ["kelola menu", "kasir"],
                 use_number=True,

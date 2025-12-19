@@ -8,3 +8,6 @@ def exitAlternateScreen():
 
 def clearScreen():
     print("\033[2J\033[H", end="")
+
+def clearLastLine():
+    print("\033[F\033[K", end="")
